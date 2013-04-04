@@ -71,7 +71,11 @@ var board = {
       clearTimeout(timeout);
     });
     this.all().each(function(pixel) {
-      pixel.set([0, 0, 0]);
+      pixel.set({
+        r: 0,
+        g: 0,
+        b: 0
+      });
     });
     request('post', '/clear', {});
   },
@@ -91,14 +95,11 @@ var board = {
     } else {
       var commands = [];
       _.each(data, function(pixel, i) {
-          commands.push({
-            command: 'set',
-            index: i,
-            r: pixel[0],
-            g: pixel[1],
-            b: pixel[2]
-          });
-        }, this);
+        commands.push(_.extend({
+          command: 'set',
+          index: i
+        }, pixel));
+      }, this);
       $.ajax({
         type: 'post',
         url: '/update',
@@ -107,8 +108,16 @@ var board = {
     }
   },
   js: function() {
-    var yellw = [241, 220, 63],
-        black = [50, 51, 48];
+    var yellw = {
+      r: 241,
+      g: 220,
+      b: 63
+    },
+    black = {
+      r: 50,
+      g: 51,
+      b: 48
+    };
     this.set([
       yellw, yellw, yellw, yellw, yellw, yellw, yellw, yellw,
       yellw, yellw, yellw, yellw, yellw, yellw, yellw, yellw,
@@ -317,15 +326,17 @@ function convertColor() {
       hex = hexFromColorName(hex);
     }
     hex = hex.replace(/^#/, '');
-    color = [
-      parseInt(hex.substr(0, 2), 16),
-      parseInt(hex.substr(2, 2), 16),
-      parseInt(hex.substr(4, 2), 16)
-    ];
-  } else if (arguments.length === 3) {
-    color = _.toArray(arguments);
+    color = {
+      r: parseInt(hex.substr(0, 2), 16),
+      g: parseInt(hex.substr(2, 2), 16),
+      b: parseInt(hex.substr(4, 2), 16)
+    };
   } else {
-    color = arguments[0] || [0, 0, 0];
+    color = arguments[0] || {
+      r: 0,
+      g: 0,
+      b: 0
+    };
   }
   return color;
 }
@@ -370,13 +381,10 @@ Pixels.prototype.set = function(color) {
   });
   var commands = [];
   _.each(this._pixels, function(pixel) {
-    commands.push({
+    commands.push(_.extend({
       command: 'set',
-      index: pixel.index,
-      r: color[0],
-      g: color[1],
-      b: color[2]
-    });
+      index: pixel.index
+    }, pixel.color));
   }, this);
   request('post', '/update', {commands: commands});
   return this;
@@ -397,16 +405,8 @@ Pixels.prototype.fade = function(from, to, duration, complete) {
     commands.push({
       command: 'fade',
       index: pixel.index,
-      from: {
-        r: from[0],
-        g: from[1],
-        b: from[2]
-      },
-      to: {
-        r: to[0],
-        g: to[1],
-        b: to[2]
-      },
+      from: from,
+      to: to,
       duration: duration
     });
   }, this);
